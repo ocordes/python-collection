@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # written by: Oliver Cordes 2017-01-20
-# changed by: Oliver Cordes 2017-01-20
+# changed by: Oliver Cordes 2017-01-23
 
 
 # Copyright (C) 2917 Oliver Cordes
@@ -22,23 +22,75 @@
 # The GNU General Public License is a free, copyleft license for software aon follow.
 
 
+import sys, datetime
+
+import atexit
+
+
+# internal variables
+logger = sys.stdout
+
+# debug_goodbye is called when the program ends
+#
+# using a decorator for simplifying
+#
+@atexit.register
+def debug_goodbye():
+    global logger
+
+    if ( logger != sys.stdout ):
+        dt = datetime.datetime.now()
+        s = dt.strftime( '%Y-%m-%d %H:%M:%S ' ) + 'Logfile closed' + '\n'
+        logger.write( s )
+        logger.write( '--------------------------------------------------------------------------------\n' )
+        logger.close()
+
+# debug_init can be called to redirect the output to a file
+#
+def debug_init( filename ):
+    global logger
+
+    logger = open( filename, 'a')
+    dt = datetime.datetime.now()
+    s = dt.strftime( '%Y-%m-%d %H:%M:%S ' ) + 'Logfile opened' + '\n'
+    logger.write( s )
+
+# print_debug is a helper function to write debug messages into the
+# output stream
+#
+def _print_debug( s ):
+    dt = datetime.datetime.now()
+    s = dt.strftime( '%Y-%m-%d %H:%M:%S ' ) + s + '\n'
+    logger.write( s )
+
+
 def Ddebug( func ):
 
     def inner( *args, **kwargs):
 
-        print( func.__name__ )
-        print( args, kwargs )
+        _print_debug( 'call function: %s' % func.__name__ )
 
-        if kwargs is not None:
+        pos = 1
+        _print_debug( ' fixed arguments:')
+        for i in args:
+            _print_debug( '  arg %3i : %s' % ( pos, i ))
+            pos += 1
+
+        if ( ( kwargs is not None ) and ( len( kwargs.keys() ) > 0 )):
+            _print_debug( ' free arguments: ')
             for key in kwargs.keys():
-                print( "%s == %s" %(key, kwargs[key] ) )
+                _print_debug( '  %s == %s' %(key, kwargs[key] ) )
 
         # call original function
         ret = func( *args, **kwargs) #2
 
         # print return values, if any
         if ret is not None:
-            print( 'return values:', ret )
+            _print_debug( ' return values:' )
+            pos = 1
+            for i in ret:
+                _print_debug( '  val %3i : %s' % ( pos, i ) )
+                pos += 1
 
         return ret
 
@@ -51,6 +103,8 @@ def Ddebug( func ):
 # main
 
 if __name__ == "__main__":
+
+    debug_init( 'debug.log' )
 
     @Ddebug
     def test_func1( x, y, z ):
