@@ -73,7 +73,12 @@ def Ddebug( func ):
         pos = 1
         _print_debug( ' fixed arguments:')
         for i in args:
-            _print_debug( '  arg %3i : %s' % ( pos, i ))
+            val = i.__repr__()
+            if ( val[0] == '<' ):
+                # detect a self arguments
+                s = val[1:].split( ' ')
+                val = 'self argument of class: '+s[0]
+            _print_debug( '  arg %3i : %s' % ( pos, val ))
             pos += 1
 
         if ( ( kwargs is not None ) and ( len( kwargs.keys() ) > 0 )):
